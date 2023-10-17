@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>McKinsey Problem Solving Game</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="https://pyscript.net/releases/2022.12.1/pyscript.css" />
+    <script defer src="https://pyscript.net/releases/2022.12.1/pyscript.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <main class="w-full flex  flex-col justify-center p-6 space-x-6">
+        <h1 class="text-2xl font-bold ml-6">McKinsey Problem Solving Game</h1>
+
+        <py-script >
+            default_names = ["grass", "mushroom", "nuts", "mouse", "squirrel", "snake", "fox", "tiger"]
+            default_names_need= [0, 0, 0, 4000, 2500, 2000, 2000, 2000]
+            default_names_prov = [5000, 5000, 4000, 3000, 2500, 1500, 1200, 1000]
+            default_names_prey = ["1,4", "", "", "1,2", "2,3", "4", "5", "6,7"]
+            
+            form_values = {
+            }
+            
+            for i in range(1,9):
+                name_animal = "animal" + str(i)
+                name_animal_need = "animal" + str(i) + "_need"
+                name_animal_prov = "animal" + str(i) + "_prov"
+                name_animal_prey = "animal" + str(i) + "_prey" 
+                form_values[name_animal] = default_names[i-1]
+                form_values[name_animal_need] = default_names_need[i-1]
+                form_values[name_animal_prov] = default_names_prov[i-1]
+                form_values[name_animal_prey] = default_names_prey[i-1]
+            
+            
+            # Create all the event handlers
+            
+            def submit_handler(event = None):
+                if event:
+                    event.preventDefault()
+                    display(f"The input animals are:", target="form-values")
+                    for i in range(1,9):
+                        name_animal = "animal" + str(i)
+                        name_animal_need = "animal" + str(i) + "_need"
+                        name_animal_prov = "animal" + str(i) + "_prov"
+                        name_animal_prey = "animal" + str(i) + "_prey"
+                        display(f"- {form_values[name_animal]} (needs: {form_values[name_animal_need]} cal, provides: {form_values[name_animal_prov]} cal)", target="form-values")
+            
+                    display(f"------------------------------------------", target="form-values")
+                    execute_when_loading()
+                    
+            def reset_handler(event = None):
+                if event:
+                    form_values = {
+                        "animal1": "",
+                        "animal2": "",
+                    }
+            
+                    display(f"Form values are: {form_values}", target="form-values")
+            
+            def input_handler(event):
+                for i in range(1,9):
+                    name_animal = "animal" + str(i)
+                    name_animal_need = "animal" + str(i) + "_need"
+                    name_animal_prov = "animal" + str(i) + "_prov"
+                    name_animal_prey = "animal" + str(i) + "_prey"
+                    if event.target.id == name_animal:
+                        form_values[name_animal] = event.target.value
+                    if event.target.id == name_animal_need:
+                        form_values[name_animal_need] = event.target.value
+                    if event.target.id == name_animal_prov:
+                        form_values[name_animal_prov] = event.target.value
+                    if event.target.id == name_animal_prey:
+                        form_values[name_animal_prey] = event.target.value
+            
+            
+            
+            # Now map the event handlers to the elements
+            
+            for i in range(1,9):
+                name_animal = "animal" + str(i)
+                name_animal_need = "animal" + str(i) + "_need"
+                name_animal_prov = "animal" + str(i) + "_prov"
+                name_animal_prey = "animal" + str(i) + "_prey"
+                Element(name_animal).element.oninput = input_handler
+                Element(name_animal_need).element.oninput = input_handler
+                Element(name_animal_prov).element.oninput = input_handler
+                Element(name_animal_prey).element.oninput = input_handler
+            
+            
+            Element("form").element.onsubmit = submit_handler
+            Element("form").element.onreset = reset_handler
+            
+            
+            import operator
+            
+            def count_list(l):
+                d = {}
+                for i in l:
+                    if i not in d:
+                        d[i] = 1
+                    else:
+                        d[i] += 1
+                return d
+            
+            class Animal:
+                def __init__(self, name, cal_needed, cal_prov, preys):
+                    self.name = name
+                    self.cal_needed = cal_needed
+                    self.cal_prov = cal_prov
+                    # self.predators = predators
+                    self.preys = preys
+                
+                def __repr__(self):
+                    return f"{self.name}"
+            
+                def __str__(self):
+                    return f"{self.name}"
+                
+                def __lt__(self, other):
+                    return self.cal_needed < other.cal_needed
+            
+            animal = {}
+            
+            
+            def execute_when_loading():
+                list_animals = []
+                for i in range(1,9):
+                    name_animal = "animal" + str(i)
+                    name_animal_need = "animal" + str(i) + "_need"
+                    name_animal_prov = "animal" + str(i) + "_prov"
+                    an = Animal(form_values[name_animal], cal_needed = int(form_values[name_animal_need]), cal_prov = int(form_values[name_animal_prov]), preys = [])
+                    list_animals.append(an)
+                for i in range(1,9):
+                    name_animal_pred = "animal" + str(i) + "_prey"
+                    list_prey = form_values[name_animal_pred]
+                    list_prey = list_prey.split(',')
+                    if list_prey[0] != "":
+                        list_animals[i-1].preys = [list_animals[int(j)-1] for j in list_prey]
+                    
+                sorted_animals_prov = sorted(list_animals, key=operator.attrgetter('cal_prov'), reverse=True)
+            
+                deaths = []
+                for animal in sorted_animals_prov:
+                    if animal.cal_needed > 0:
+                        display(f"{animal} needs {animal.cal_needed} calories", target="form-values")
+                        display(f"{animal} can eat:", target="form-values")
+                        for prey in animal.preys:
+                            display(f"- {prey} with {prey.cal_prov} calories remaining", target="form-values")
+                        sorted_preys = sorted(animal.preys, key=operator.attrgetter('cal_prov'), reverse=True)
+                        cal_preys = [preys.cal_prov for preys in sorted_preys]
+                        count_cals = count_list(cal_preys)
+            
+                        i = 0
+                        while i < len(sorted_preys):
+                            if animal.cal_needed == 0:
+                                break
+                            count_same_cals = count_cals[sorted_preys[i].cal_prov]
+                            if animal.cal_needed < sorted_preys[i].cal_prov * count_same_cals:
+                                for j in range(count_same_cals):
+                                    sorted_preys[i].cal_prov -= animal.cal_needed / count_same_cals
+                                    display(f"{animal} eats {animal.cal_needed / count_same_cals} from {sorted_preys[i].name}", target="form-values")
+                                    display(f"- {sorted_preys[i].name} has {sorted_preys[i].cal_prov} calories remaining", target="form-values")
+                                    i += 1
+                                animal.cal_needed = 0
+                            else:
+                                animal.cal_needed -= sorted_preys[i].cal_prov
+                                for j in range(count_same_cals):
+                                    display(f"{animal} eats {sorted_preys[i].cal_prov} from {sorted_preys[i].name}", target="form-values")
+                                    sorted_preys[i].cal_prov = 0
+                                    display(f"-- {sorted_preys[i].name} dies :(", target="form-values")
+                                    deaths.append(sorted_preys[i])
+                                    i += 1
+            
+                        if animal.cal_needed > 0:
+                            display(f"-- {animal.name} dies :(", target="form-values")
+                            deaths.append(animal)
+                
+                        else:
+                            display(f"{animal} survives!", target="form-values")
+                
+                        display("------------------------------------------", target="form-values")
+            
+            
+                
+                if len(deaths) > 0:
+                    display("DEAD ANIMALS:", target="form-values")
+                    display(deaths, target="form-values")
+                else:
+                    display("Congrats! All animals survived!", target="form-values")
+            
+                display("------------------------------------------", target="form-values")
+                display("------------------------------------------", target="form-values")
+                display("------------------------------------------", target="form-values")
+        </py-script>
+        <form id="form" py-submit="submit_handler()" reset="reset_handler()" class="flex flex-col my-12 w-2/5">
+            <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-whitex"></label>
+            <b>Animal 1</b>
+            <input 
+            id="animal1" 
+            type="string" 
+            placeholder="Grass"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories needed:
+            <input 
+            id="animal1_need" 
+            type="string" 
+            placeholder="0"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories provided:
+            <input 
+            id="animal1_prov" 
+            type="string" 
+            placeholder="5000"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Preys (input list of numbers):
+            <input 
+            id="animal1_prey" 
+            type="string" 
+            placeholder=""
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            <br>
+            <b>Animal 2</b>
+            <input 
+            id="animal2" 
+            name="Animal" 
+            type="string" 
+            placeholder=Mushroom
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories needed:
+            <input 
+            id="animal2_need" 
+            type="string" 
+            placeholder="0"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories provided:
+            <input 
+            id="animal2_prov" 
+            type="string" 
+            placeholder="5000"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >
+            Preys (input list of numbers):
+            <input 
+            id="animal2_prey" 
+            type="string" 
+            placeholder=""
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            > 
+            <br>
+            <b>Animal 3</b>
+            <input 
+            id="animal3" 
+            type="string" 
+            placeholder="Nuts"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories needed:
+            <input 
+            id="animal3_need" 
+            name="Animal" 
+            type="string" 
+            placeholder="0"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories provided:
+            <input 
+            id="animal3_prov" 
+            name="Animal" 
+            type="string" 
+            placeholder="4000"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >
+            Preys (input list of numbers):
+            <input 
+            id="animal3_prey" 
+            name="Animal" 
+            type="string" 
+            placeholder=""
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            > 
+            <br>
+            <b>Animal 4</b>
+            <input 
+            id="animal4" 
+            type="string" 
+            placeholder="Mouse"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories needed:
+            <input 
+            id="animal4_need" 
+            name="Animal" 
+            type="string" 
+            placeholder="3000"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories provided:
+            <input 
+            id="animal4_prov" 
+            type="string" 
+            placeholder="4000"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >
+            Preys (input list of numbers):
+            <br>
+            <input 
+            id="animal4_prey" 
+            type="string" 
+            placeholder="1,2"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            > 
+            <br>
+            <b>Animal 5</b>
+            <input 
+            id="animal5" 
+            type="string" 
+            placeholder="Squirrel"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories needed:
+            <input 
+            id="animal5_need" 
+            type="string" 
+            placeholder="3500"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories provided:
+            <input 
+            id="animal5_prov" 
+            type="string" 
+            placeholder="2500"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >
+            Preys (input list of numbers):
+            <input 
+            id="animal5_prey" 
+            name="Animal" 
+            type="string" 
+            placeholder="2,3"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            > 
+            <br>
+            <b>Animal 6</b>
+            <input 
+            id="animal6" 
+            type="string" 
+            placeholder="Snake"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories needed:
+            <input 
+            id="animal6_need" 
+            type="string" 
+            placeholder="2000"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories provided:
+            <input 
+            id="animal6_prov" 
+            name="Animal" 
+            type="string" 
+            placeholder="1500"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >
+            Preys (input list of numbers):
+            <input 
+            id="animal6_prey" 
+            type="string" 
+            placeholder="4"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            > 
+            <br>
+            <b>Animal 7</b>
+            <input 
+            id="animal7" 
+            type="string" 
+            placeholder="Fox"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories needed:
+            <input 
+            id="animal7_need" 
+            type="string" 
+            placeholder="2000"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories provided:
+            <input 
+            id="animal7_prov" 
+            name="Animal" 
+            type="string" 
+            placeholder="1200"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >
+            Preys (input list of numbers):
+            <input 
+            id="animal7_prey" 
+            name="Animal" 
+            type="string" 
+            placeholder="5"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            > 
+            <br>
+            <b>Animal 8</b>
+            <input 
+            id="animal8" 
+            type="string" 
+            placeholder="Tiger"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories needed:
+            <input 
+            id="animal8_need" 
+            type="string" 
+            placeholder="2000"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >  
+            Calories provided:
+            <input 
+            id="animal8_prov" 
+            name="Animal" 
+            type="string" 
+            placeholder="1000"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            >
+            Preys (input list of numbers):
+            <input 
+            id="animal8_prey" 
+            name="Animal" 
+            type="string" 
+            placeholder="6,7"
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            py-input="input_handler()" 
+            > 
+            <div class="mt-6">
+                <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">Submit</button>
+                <button type="reset" class="text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700">Reset</button>
+            </div>
+        </form>
+        <div class="mb-12">
+            <h2 class="text-xl font-bold">Result:</h2>
+            <div id="form-values"></div>
+        </div>
+    </main>
+</body>
+</html>
